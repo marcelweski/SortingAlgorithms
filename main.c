@@ -4,19 +4,23 @@
 
 #define N 150000
 
-void randomize(int a[N])
+enum InitType
 {
-	for (int i = 0; i < N; i++)
-		a[i] = rand() % N;
-}
-
-enum SortType
-{
+	RANDOM,
 	ASCENDING,
 	DESCENDING
 };
 
-void selectionSort(int *a, enum SortType sortType)
+void init(int a[N], enum InitType initType)
+{
+	for (int i = 0; i < N; i++)
+		a[i] = (initType == RANDOM ? ((rand() % N)+1) : (initType == ASCENDING ? i+1 : N-i));
+}
+
+/*
+ * Sorting Algorithms
+ */
+void selectionSort(int a[N])
 {
 	int insertIdx = 0, minIdx, i, t;
 
@@ -24,7 +28,7 @@ void selectionSort(int *a, enum SortType sortType)
 	{
 		minIdx = insertIdx;
 		for (i = insertIdx + 1; i < N; i++)
-			if (sortType == ASCENDING ? a[i] < a[minIdx] : a[i] > a[minIdx])
+			if (a[i] < a[minIdx])
 				minIdx = i;
 
 		t = a[minIdx];
@@ -35,7 +39,7 @@ void selectionSort(int *a, enum SortType sortType)
 	}
 }
 
-void insertionSort(int *a, enum SortType sortType)
+void insertionSort(int a[N])
 {
 	int i, j, k;
 
@@ -43,7 +47,7 @@ void insertionSort(int *a, enum SortType sortType)
 	{
 		k = a[i];
 		j = i;
-		while (j > 0 && (sortType == ASCENDING ? a[j-1] > k : a[j-1] < k))
+		while (j > 0 && a[j-1] > k)
 		{
 			a[j] = a[j - 1];
 			j--;
@@ -52,15 +56,15 @@ void insertionSort(int *a, enum SortType sortType)
 	}
 }
 
-void mergeSortInternal(int *a, int *b, int l, int r, enum SortType sortType)
+void mergeSortInternal(int a[N], int b[N], int l, int r)
 {
 	int i, j, k, m;
 
 	if (r > l)
 	{
 		m = (r + l) / 2;
-		mergeSortInternal(a, b, l, m, sortType);
-		mergeSortInternal(a, b, m + 1, r, sortType);
+		mergeSortInternal(a, b, l, m);
+		mergeSortInternal(a, b, m + 1, r);
 
 		for (i = m + 1; i > l; i--)
 			b[i - 1] = a[i - 1];
@@ -69,18 +73,16 @@ void mergeSortInternal(int *a, int *b, int l, int r, enum SortType sortType)
 			b[r + m - j] = a[j + 1];
 
 		for (k = l; k <= r; k++)
-			a[k] = (sortType == ASCENDING ? b[i] < b[j] : b[i] > b[j]) ? b[i++] : b[j--];
+			a[k] = (b[i] < b[j]) ? b[i++] : b[j--];
 	}
 }
-
-void mergeSort(int* a, enum SortType sortType)
+void mergeSort(int a[N])
 {
-	int* b = (int*)malloc(sizeof(int) * N);
-	mergeSortInternal(a, b, 0, N-1, sortType);
-	free(b);
+	int b[N];
+	mergeSortInternal(a, b, 0, N-1);
 }
 
-void quickSortInternal(int *a, int l, int r, enum SortType sortType)
+void quickSortInternal(int a[N], int l, int r)
 {
 	int v, i, j, t;
 
@@ -92,8 +94,8 @@ void quickSortInternal(int *a, int l, int r, enum SortType sortType)
 
 		while (1)
 		{
-			while (sortType == ASCENDING ? a[++i] < v : a[++i] > v);
-			while (sortType == ASCENDING ? a[--j] > v : a[--j] < v);
+			while (a[++i] < v) {};
+			while (a[--j] > v) {};
 
 			if (i >= j)
 				break;
@@ -107,17 +109,16 @@ void quickSortInternal(int *a, int l, int r, enum SortType sortType)
 		a[i] = a[r];
 		a[r] = t;
 
-		quickSortInternal(a, l, i - 1, sortType);
-		quickSortInternal(a, i + 1, r, sortType);
+		quickSortInternal(a, l, i - 1);
+		quickSortInternal(a, i + 1, r);
 	}
 }
-
-void quickSort(int *a, enum SortType sortType)
+void quickSort(int a[N])
 {
-	quickSortInternal(a, 0, N - 1, sortType);
+	quickSortInternal(a, 0, N-1);
 }
 
-void downheap(int *a, int n, int k, enum SortType sortType)
+void downheap(int a[N], int n, int k)
 {
 	int j, v;
 
@@ -125,10 +126,10 @@ void downheap(int *a, int n, int k, enum SortType sortType)
 	while (k <= n/2)
 	{
 		j = k + k;
-		if (j < n && (sortType == ASCENDING ? a[j] < a[j + 1] : a[j] > a[j + 1]))
+		if (j < n && a[j] < a[j + 1])
 			j++;
 
-		if (sortType == ASCENDING ? v >= a[j] : v <= a[j])
+		if (v >= a[j])
 			break;
 
 		a[k] = a[j];
@@ -137,103 +138,85 @@ void downheap(int *a, int n, int k, enum SortType sortType)
 
 	a[k] = v;
 }
-
-void heapSort(int* a, enum SortType sortType)
+void heapSort(int a[N])
 {
-	int k, t, n = N-1;
+	int k, t, n=N-1;
 
 	for (k = N / 2; k >= 0; k--)
-		downheap(a, n, k, sortType);
+		downheap(a, n, k);
 
 	while (n > 0)
 	{
 		t = a[0];
 		a[0] = a[n];
 		a[n] = t;
-		downheap(a, --n, 0, sortType);
+		downheap(a, --n, 0);
 	}
 }
 
-double measureSingle(int *a, enum SortType sortType, void(*sortFunc)(int*,enum SortType))
+/*
+ * Measuring
+ */
+double measureSingle(int a[N], enum InitType initType, void(*sortFunc)(int*))
 {
 	clock_t starttime, endtime;
 
-	randomize(a);
+	init(a, initType);
 
 	starttime = clock();
-	sortFunc(a, sortType);
+	sortFunc(a);
 	endtime = clock();
 
 	return ((double)endtime - starttime) / CLOCKS_PER_SEC;
 }
 
-void measureSortType(int *a, enum SortType sortType, void(*sortFunc)(int*, enum SortType))
+void measureWithAverage(int a[N], enum InitType initType, void(*sortFunc)(int*))
 {
 	double runtime1, runtime2, runtime3, average;
 
-	runtime1 = measureSingle(a, sortType, sortFunc);
+	runtime1 = measureSingle(a, initType, sortFunc);
 	printf("%6.2f s | ", runtime1);
 	
-	runtime2 = measureSingle(a, sortType, sortFunc);
+	runtime2 = measureSingle(a, initType, sortFunc);
 	printf("%6.2f s | ", runtime2);
 	
-	runtime3 = measureSingle(a, sortType, sortFunc);
+	runtime3 = measureSingle(a, initType, sortFunc);
 	printf("%6.2f s | ", runtime3);
 	
 	average = (runtime1 + runtime2 + runtime3) / 3;
 	printf("%6.2f s\n", average);
 }
 
-void measureAlgorithm(int *a, const char* name, void(*sortFunc)(int*, enum SortType))
+void measureAlgorithm(int a[N], const char* name, void(*sortFunc)(int*))
 {
-	// ascending
-	printf("\t%13s ASC  | %7i | ", name, N);
-	measureSortType(a, ASCENDING, sortFunc);
+	printf("\t%13s RANDOM | %7i | ", name, N);
+	measureWithAverage(a, RANDOM, sortFunc);
 	
-	// descending 
-	printf("\t%13s DESC | %7i | ", name, N);
-	measureSortType(a, DESCENDING, sortFunc);
+	printf("\t%13s ASC    | %7i | ", name, N);
+	measureWithAverage(a, ASCENDING, sortFunc);
+	
+	printf("\t%13s DESC   | %7i | ", name, N);
+	measureWithAverage(a, DESCENDING, sortFunc);
+
+	printf("\t--------------------------------------------------------------------------\n");
 }
 
 int main(int argc, char** argv)
 {
-	int *a;
-
+	int a[N];
+	
 	srand(time(NULL));
-
-	a = (int*)malloc(sizeof(int) * N);
-
-#define LINE "\t------------------------------------------------------------------------\n"
 	
-	printf("\n");
-	printf("\tAlgorithm          | N       | 1. Run   | 2. Run   | 3. Run   | Average\n");
-	printf(LINE);
-
+	printf("\n\tAlgorithm            |    N    |   1. Run |   2. Run |   3. Run |  Average");
+	printf("\n\t--------------------------------------------------------------------------\n");
+	
 	measureAlgorithm(a, "SelectionSort", selectionSort);
-	
-	printf(LINE);
-	
 	measureAlgorithm(a, "InsertionSort", insertionSort);
+	measureAlgorithm(a, "MergeSort",     mergeSort);
+	measureAlgorithm(a, "QuickSort",     quickSort);
+	measureAlgorithm(a, "HeapSort",      heapSort);
 	
-	printf(LINE);
-
-	measureAlgorithm(a, "MergeSort", mergeSort);
-
-	printf(LINE);
-
-	measureAlgorithm(a, "QuickSort", quickSort);
-
-	printf(LINE);
-
-	measureAlgorithm(a, "HeapSort", heapSort);
-
 	printf("\n");
 
-	// for (int i = 0; i < N; i++)
-	// 	printf("%i ", a[i]);
-	// printf("\n");
-	
-	free(a);
-	system("pause");
-	return 0;
+	return system("pause");;
 }
