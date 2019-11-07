@@ -1,6 +1,7 @@
 ﻿#include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 
 #define N 150000
 
@@ -154,6 +155,24 @@ void heapSort(int a[N])
 	}
 }
 
+void distributionCountingSort(int a[N])
+{
+	int i, j, b[N], count[N];
+
+	memset(count, 0, sizeof(int) * N);
+
+	for (i = 0; i < N; i++)
+		count[a[i]-1]++;
+
+	for (j = 1; j < N; j++)
+		count[j] += count[j - 1];
+
+	for (i = N - 1; i >= 0; i--)
+		b[--count[a[i]-1]] = a[i];
+
+	memcpy(a, b, sizeof(int) * N);
+}
+
 /*
  * Measuring
  */
@@ -189,16 +208,16 @@ void measureWithAverage(int a[N], enum InitType initType, void(*sortFunc)(int*))
 
 void measureAlgorithm(int a[N], const char* name, void(*sortFunc)(int*))
 {
-	printf("\t%13s RANDOM | %7i | ", name, N);
+	printf("\t%24s RANDOM | %7i | ", name, N);
 	measureWithAverage(a, RANDOM, sortFunc);
 	
-	printf("\t%13s ASC    | %7i | ", name, N);
+	printf("\t%24s ASC    | %7i | ", name, N);
 	measureWithAverage(a, ASCENDING, sortFunc);
 	
-	printf("\t%13s DESC   | %7i | ", name, N);
+	printf("\t%24s DESC   | %7i | ", name, N);
 	measureWithAverage(a, DESCENDING, sortFunc);
 
-	printf("\t--------------------------------------------------------------------------\n");
+	printf("\t--------------------------------------------------------------------------------------\n");
 }
 
 int main(int argc, char** argv)
@@ -207,15 +226,16 @@ int main(int argc, char** argv)
 	
 	srand(time(NULL));
 	
-	printf("\n\tAlgorithm            |    N    |   1. Run |   2. Run |   3. Run |  Average");
-	printf("\n\t--------------------------------------------------------------------------\n");
+	printf("\n\tAlgorithm                       |    N    |   1. Run |   2. Run |   3. Run |  Average");
+	printf("\n\t--------------------------------------------------------------------------------------\n");
 	
-	measureAlgorithm(a, "SelectionSort", selectionSort);
-	measureAlgorithm(a, "InsertionSort", insertionSort);
-	measureAlgorithm(a, "MergeSort",     mergeSort);
-	measureAlgorithm(a, "QuickSort",     quickSort);
-	measureAlgorithm(a, "HeapSort",      heapSort);
-	
+	measureAlgorithm(a, "SelectionSort",            selectionSort);
+	measureAlgorithm(a, "InsertionSort",            insertionSort);
+	measureAlgorithm(a, "MergeSort",                mergeSort);
+	measureAlgorithm(a, "QuickSort",                quickSort);
+	measureAlgorithm(a, "HeapSort",                 heapSort);
+	measureAlgorithm(a, "DistributionCountingSort", distributionCountingSort);
+
 	printf("\n");
 
 	return system("pause");;
